@@ -31,6 +31,7 @@ interface IContext {
   relayerRegion: string;
   pairings: PairingTypes.Struct[];
   accounts: string[];
+  uri: string | undefined;
   setChains: any;
   setRelayerRegion: any;
   signTransaction: (
@@ -93,6 +94,7 @@ export function ClientContextProvider({
   const [accounts, setAccounts] = useState<string[]>([]);
   const [chains, setChains] = useState<string[]>(defaultChains);
   const [relayerRegion, setRelayerRegion] = useState<string>(relayUrl);
+  const [uri, setUri] = useState<string>();
 
   /**
    * Web3Modal Config
@@ -116,6 +118,7 @@ export function ClientContextProvider({
     setAccounts([]);
     setChains(defaultChains);
     setRelayerRegion(relayUrl);
+    setUri(undefined);
   }, [defaultChains, relayUrl]);
 
   const onSessionConnected = useCallback((_session: SessionTypes.Struct) => {
@@ -143,20 +146,23 @@ export function ClientContextProvider({
           requiredNamespaces
         );
 
-        const { uri, approval } = await client.connect({
+        const { uri: connectionUri, approval } = await client.connect({
           pairingTopic: pairing?.topic,
           requiredNamespaces,
           optionalNamespaces
         });
 
+        // Set the URI for external use
+        setUri(connectionUri);
+
         // Open QRCode modal if a URI was returned (i.e. we're not connecting an existing pairing).
-        if (uri) {
+        if (connectionUri) {
           // Create a flat array of all requested chains across namespaces.
           const standaloneChains = Object.values(requiredNamespaces)
             .map((namespace) => namespace.chains)
             .flat() as string[];
 
-          web3Modal.openModal({ uri, standaloneChains });
+          web3Modal.openModal({ uri: connectionUri, standaloneChains });
         }
 
         const session = await approval();
@@ -279,10 +285,17 @@ export function ClientContextProvider({
     relayerRegion,
   ]);
 
+  // Add initialization guard to prevent multiple client creations
+  // This prevents the "WalletConnect Core is already initialized" warning in development mode
+  const isInitializingRef = useRef(false);
+
   useEffect(() => {
-    if (!client) {
-      createClient();
-    } else if (prevRelayerValue.current !== relayerRegion) {
+    if (!client && !isInitializingRef.current) {
+      isInitializingRef.current = true;
+      createClient().finally(() => {
+        isInitializingRef.current = false;
+      });
+    } else if (client && prevRelayerValue.current !== relayerRegion) {
       client.core.relayer.restartTransport(relayerRegion);
       prevRelayerValue.current = relayerRegion;
     }
@@ -344,6 +357,7 @@ export function ClientContextProvider({
       relayerRegion,
       client,
       session,
+      uri,
       connect,
       disconnect,
       setChains,
@@ -359,6 +373,7 @@ export function ClientContextProvider({
       relayerRegion,
       client,
       session,
+      uri,
       connect,
       disconnect,
       setChains,
