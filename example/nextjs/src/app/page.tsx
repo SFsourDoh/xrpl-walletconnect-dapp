@@ -331,8 +331,8 @@ export default function Home() {
       {result && (
         <div className="max-w-full">
           <h3 className="text-lg font-semibold mb-2">✅ Signed Transaction Result:</h3>
-          <pre className="overflow-x-scroll bg-gray-100 p-4 rounded">
-            <code>{JSON.stringify(result, null, 2)}</code>
+          <pre className="overflow-x-scroll bg-gray-100 p-4 rounded text-gray-900">
+            <code className="text-gray-900">{JSON.stringify(result, null, 2)}</code>
           </pre>
         </div>
       )}
@@ -343,8 +343,8 @@ export default function Home() {
           <h3 className="text-lg font-semibold mb-2">
             {isSubmitting ? "⏳ XRPL Submission Status:" : "📋 XRPL Submission Result:"}
           </h3>
-          <pre className="overflow-x-scroll bg-gray-100 p-4 rounded">
-            <code>{JSON.stringify(submissionResult, null, 2)}</code>
+          <pre className="overflow-x-scroll bg-gray-100 p-4 rounded text-gray-900">
+            <code className="text-gray-900">{JSON.stringify(submissionResult, null, 2)}</code>
           </pre>
         </div>
       )}
